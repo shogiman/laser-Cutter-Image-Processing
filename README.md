@@ -10,7 +10,7 @@ Initially this repository shall contain the following types of files:
 
 **pictureLaserCut.py**
 
-This file will parse all .png files in the current working directory and generate a .dxf corresponding to each .png file. The script works on the following principle
+This file will parse all **.png** files in the **current working directory** and generate a **.dxf** corresponding to each **.png** file. The script works on the following principle:
 
  * The input file is broken down into a confgirable number of square blocks (default 60 in x-axis)
  * The width of the final graphic is approximating a configurable width in cm (default 20cm).
