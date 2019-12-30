@@ -7,12 +7,7 @@ Created on Sat Dec 28 13:40:07 2019
 
 from   skimage import io
 import glob
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy import misc
 import pandas as pd
-from skimage import data
-from skimage import filters
 
 # import the dxf module
 import ezdxf as dxf
@@ -143,17 +138,8 @@ for image_path in sorted(glob.glob(fileNames)):
     # Now save the png's dxf file
     doc.saveas('{:s}.dxf'.format(image_path.split('.')[:-1][0]))
     print('Radius data:\n-----------\n    Min: {:d}\n    Max: {:d}'.format(rMin,rMax))
-            
+
+    # Display spread of average pixel colour            
     spDf= pd.DataFrame(spread)
     spDf.hist(bins=255)
-    
-    
-    #image[0][0]
-    # splig image into 1 cm squares
-    countx=int(image.shape[0]/config['width'])
-    county=int(image.shape[1]/config['width'])
-    
-
-
-
     
