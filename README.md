@@ -18,3 +18,9 @@ This file will parse all .png files in the current working directory and generat
  * A circle is drawn, in the output .dxf file coresponding to the average value returned
 
 The resulting .dxf file contains an image, not unlike the old newspaper black and whites pictures that have large dots for dark areas and small dots for light areas
+
+__Pre-requisites:__
+ * import skimage
+ * import glob
+ * import pandas
+ * import ezdxf
