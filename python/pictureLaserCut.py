@@ -17,7 +17,7 @@ config = {
     'height': 150,
     
     # Config for including a central hole for connecting cut-outs
-    'centreHoleIncluded'    : True,
+    'centreHoleIncluded'    : False,
     'centreHoleRadius'      : 0.05,  # Radius in mm
     'centreHoleRadiusLimit' : 0.05   # Limit of main circle to centre hole...
     
