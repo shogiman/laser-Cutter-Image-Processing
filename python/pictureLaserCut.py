@@ -132,13 +132,13 @@ for image_path in sorted(glob.glob(fileNames)):
                         rMax = radius
 
                     limit = 0
-        
+                    drawCentreHole = False
                     # Check whether centred hole is required
                     if config['centreHoleIncluded']:
                         coRadius = float(config['centreHoleRadius']) * scaleFactor
                         #print('c: {:.3f}     ch: {:.3f}'.format(actualRadius, coRadius))
                         if coRadius > 0:
-                            msp.add_circle((incX*step, incY*step), coRadius, dxfattribs={'layer': 'circles', 'color': 3, 'lineweight':0.1})
+                            drawCentreHole = True
                             limit = coRadius + config['centreHoleRadiusLimit']
 
 
@@ -147,16 +147,14 @@ for image_path in sorted(glob.glob(fileNames)):
 
                     if actualRadius > limit:
 
-                        
+                        if drawCentreHole:
+                            msp.add_circle((incX*step, incY*step), coRadius, dxfattribs={'layer': 'circles', 'color': 3, 'lineweight':0.1})
+                       
                         # now create cicle in output file
                         incX = x/increment
                         incY = yOffset - (y/increment)
                         msp.add_circle((incX*step, incY*step), actualRadius, dxfattribs={'layer': 'circles', 'color': 7,'lineweight':0.1})
                                         
-                        
-                    else:
-                        print('c: {:.3f}     ch: {:.3f}   limit: {:.3f}'.format(actualRadius, coRadius, limit))
-
     # Now save the png's dxf file
     doc.saveas('{:s}.dxf'.format(image_path.split('.')[:-1][0]))
     print('Radius data:\n-----------\n    Min: {:d}\n    Max: {:d}'.format(rMin,rMax))
