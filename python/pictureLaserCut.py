@@ -19,7 +19,19 @@ config = {
     # Config for including a central hole for connecting cut-outs
     'centreHoleIncluded'    : False,
     'centreHoleRadius'      : 0.05,  # Radius in mm
-    'centreHoleRadiusLimit' : 0.05   # Limit of main circle to centre hole...
+    'centreHoleRadiusLimit' : 0.05,  # Limit of main circle to centre hole...
+
+    # Config for curtaining the circles
+    'curtainEnabled'    : False,
+    
+    # final width of image in cm
+    'widthCm' : 20,
+    
+    # Number  of circles in horizontal direction
+    'numXCircles' : 40,
+    
+    # Flag to denote if boundary to be defined
+    'boundaryCut' : True,
     
     }
 
@@ -54,9 +66,8 @@ maxRadius=255
 step = 5  # in mm
 scaleFactor = 0.95 # coord scaling
 
-widthCm=20 * scaleFactor
+widthCm=config['widthCm'] * scaleFactor
 
-yOffset=0
 
 fileNames='*.png'
 for image_path in sorted(glob.glob(fileNames)):
@@ -97,12 +108,13 @@ for image_path in sorted(glob.glob(fileNames)):
     doc.header['$INSUNITS']    = 4 # mm
     
     minIncrement=16
-    numXCircles=60
+    numXCircles=config['numXCircles']
     increment=int(image.shape[1]/numXCircles)
 #    if increment < minIncrement:
 #        increment = minIncrement
     
     step = (widthCm*10)/numXCircles
+    offS = step/2    
     
     incX=0
     incY=0
@@ -112,8 +124,12 @@ for image_path in sorted(glob.glob(fileNames)):
     
     spread=[]
     
+    maxX=((image.shape[1]*step)/increment) -step   
+    maxY=((image.shape[0]*step)/increment) - step
+    yOffset = maxY
+    
     for x in range(0,image.shape[1], increment):
-        
+            
         for y in range(0,image.shape[0], increment):
             
             if (image.shape[1] - x) >= increment:
@@ -133,6 +149,7 @@ for image_path in sorted(glob.glob(fileNames)):
 
                     limit = 0
                     drawCentreHole = False
+                    
                     # Check whether centred hole is required
                     if config['centreHoleIncluded']:
                         coRadius = float(config['centreHoleRadius']) * scaleFactor
@@ -147,14 +164,45 @@ for image_path in sorted(glob.glob(fileNames)):
 
                     if actualRadius > limit:
 
-                        if drawCentreHole:
+                        # now create cicle in output file
+                        incX = (x/increment)*step
+                        incY = yOffset - ((y/increment)*step)
+                        
+                        if drawCentreHole:    
                             msp.add_circle((incX*step, incY*step), coRadius, dxfattribs={'layer': 'circles', 'color': 3, 'lineweight':0.1})
                        
-                        # now create cicle in output file
-                        incX = x/increment
-                        incY = yOffset - (y/increment)
-                        msp.add_circle((incX*step, incY*step), actualRadius, dxfattribs={'layer': 'circles', 'color': 7,'lineweight':0.1})
-                                        
+                        msp.add_circle((incX, incY), actualRadius, dxfattribs={'layer': 'circles', 'color': 7,'lineweight':0.1})
+                        
+        # create verical cuts for curtain effect        
+        if config['curtainEnabled']:
+             msp.add_line((incX, -step), (incX, maxY+step ), dxfattribs={'layer': 'circles', 'color': 5, 'lineweight':0.1})
+             msp.add_circle((incX-offS, maxY+(step+offS)/2 ), float(config['centreHoleRadius']) * scaleFactor, dxfattribs={'layer': 'circles', 'color': 8, 'lineweight':0.1})
+             msp.add_circle((incX-offS, 0-(step+offS)/2 ), float(config['centreHoleRadius']) * scaleFactor, dxfattribs={'layer': 'circles', 'color': 8, 'lineweight':0.1})
+                              
+    # Slice off curtains        
+    if config['curtainEnabled']:
+
+        # Add last hanger hole...
+        msp.add_circle((incX+offS, maxY+(step+offS)/2 ), float(config['centreHoleRadius']) * scaleFactor, dxfattribs={'layer': 'circles', 'color': 8, 'lineweight':0.1})
+        msp.add_circle((incX+offS, 0-(step+offS)/2 ), float(config['centreHoleRadius']) * scaleFactor, dxfattribs={'layer': 'circles', 'color': 8, 'lineweight':0.1})
+    
+    if config['boundaryCut'] or config['curtainEnabled']:    
+        # Define containment box for curtains...
+        A = (-step,     maxY+step)
+        B = (incX+step, maxY+step)
+        C = (incX+step, -step)
+        D = (-step,     -step)
+        
+        layer='circles'
+        color=6
+        weight=0.1
+        
+        msp.add_line(A, B, dxfattribs={'layer': layer, 'color': color, 'lineweight':weight})
+        msp.add_line(B, C, dxfattribs={'layer': layer, 'color': color, 'lineweight':weight})
+        msp.add_line(C, D, dxfattribs={'layer': layer, 'color': color, 'lineweight':weight})
+        msp.add_line(D, A, dxfattribs={'layer': layer, 'color': color, 'lineweight':weight})
+
+    
     # Now save the png's dxf file
     doc.saveas('{:s}.dxf'.format(image_path.split('.')[:-1][0]))
     print('Radius data:\n-----------\n    Min: {:d}\n    Max: {:d}'.format(rMin,rMax))
