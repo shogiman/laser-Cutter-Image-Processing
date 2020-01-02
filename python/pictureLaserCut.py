@@ -14,7 +14,13 @@ import ezdxf as dxf
 
 config = {
     'width' : 10,
-    'height': 150
+    'height': 150,
+    
+    # Config for including a central hole for connecting cut-outs
+    'centreHoleIncluded'    : False,
+    'centreHoleRadius'      : 0.05,  # Radius in mm
+    'centreHoleRadiusLimit' : 0.05   # Limit of main circle to centre hole...
+    
     }
 
 def getAverage(matrix, x, y, sz=16):
@@ -81,12 +87,15 @@ for image_path in sorted(glob.glob(fileNames)):
     doc = dxf.new(dxfversion='R2010')
     
     # Create new table entries (layers, linetypes, text styles, ...).
-    doc.layers.new(name='circles', dxfattribs={'true_color': 0x00FFFFFF, 'lineweight':1})
+    doc.layers.new(name='circles', dxfattribs={'true_color': 0x00FFFFFF, 'lineweight':0.1})
     
     # DXF entities (LINE, TEXT, ...) reside in a layout (modelspace, 
     # paperspace layout or block definition).  
     msp = doc.modelspace()
 
+    doc.header['$MEASUREMENT'] = 1 # metric
+    doc.header['$INSUNITS']    = 4 # mm
+    
     minIncrement=16
     numXCircles=60
     increment=int(image.shape[1]/numXCircles)
@@ -123,23 +132,34 @@ for image_path in sorted(glob.glob(fileNames)):
                         rMax = radius
 
                     limit = 0
-                    if radius > limit:
-        
-                        actualRadius = ((step-1)*radius)/(2*maxRadius) # in mm
-                        actualRadius *= scaleFactor 
-                        
+                    drawCentreHole = False
+                    # Check whether centred hole is required
+                    if config['centreHoleIncluded']:
+                        coRadius = float(config['centreHoleRadius']) * scaleFactor
+                        #print('c: {:.3f}     ch: {:.3f}'.format(actualRadius, coRadius))
+                        if coRadius > 0:
+                            drawCentreHole = True
+                            limit = coRadius + config['centreHoleRadiusLimit']
+
+
+                    actualRadius = ((step-1)*radius)/(2*maxRadius) # in mm
+                    actualRadius *= scaleFactor 
+
+                    if actualRadius > limit:
+
+                        if drawCentreHole:
+                            msp.add_circle((incX*step, incY*step), coRadius, dxfattribs={'layer': 'circles', 'color': 3, 'lineweight':0.1})
+                       
                         # now create cicle in output file
                         incX = x/increment
                         incY = yOffset - (y/increment)
-                        msp.add_circle((incX*step, incY*step), actualRadius, dxfattribs={'layer': 'circles','lineweight':1})
-            
-  
-                
+                        msp.add_circle((incX*step, incY*step), actualRadius, dxfattribs={'layer': 'circles', 'color': 7,'lineweight':0.1})
+                                        
     # Now save the png's dxf file
     doc.saveas('{:s}.dxf'.format(image_path.split('.')[:-1][0]))
     print('Radius data:\n-----------\n    Min: {:d}\n    Max: {:d}'.format(rMin,rMax))
 
     # Display spread of average pixel colour            
-    spDf= pd.DataFrame(spread)
-    spDf.hist(bins=255)
+    # spDf= pd.DataFrame(spread)
+    # spDf.hist(bins=255)
     
