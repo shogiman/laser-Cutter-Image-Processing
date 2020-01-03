@@ -8,6 +8,7 @@ Created on Sat Dec 28 13:40:07 2019
 from   skimage import io
 import glob
 import pandas as pd
+import math
 
 # import the dxf module
 import ezdxf as dxf
@@ -22,7 +23,7 @@ config = {
     'centreHoleRadiusLimit' : 0.05,  # Limit of main circle to centre hole...
 
     # Config for curtaining the circles
-    'curtainEnabled'    : False,
+    'curtainEnabled'    : True,
     
     # final width of image in cm
     'widthCm' : 20,
@@ -32,7 +33,6 @@ config = {
     
     # Flag to denote if boundary to be defined
     'boundaryCut' : True,
-    
     }
 
 def getAverage(matrix, x, y, sz=16):
@@ -59,7 +59,9 @@ def getAverage(matrix, x, y, sz=16):
     
     return res
 
-
+def calcRadius(actR, maxR):
+    
+    return actR
 
 maxRadius=255
 
@@ -158,8 +160,11 @@ for image_path in sorted(glob.glob(fileNames)):
                             drawCentreHole = True
                             limit = coRadius + config['centreHoleRadiusLimit']
 
-
-                    actualRadius = ((step-1)*radius)/(2*maxRadius) # in mm
+                    maxRadiusArea = maxRadius * maxRadius #  no need to include pi
+                    actRadiusArea = (maxRadiusArea * radius) / maxRadius 
+                    actRadius     = math.sqrt(actRadiusArea)
+                    actualRadius = ((step-1)*actRadius)/(2*maxRadius) # in mm
+                    #actualRadius = ((step-1)*radius)/(2*maxRadius) # in mm
                     actualRadius *= scaleFactor 
 
                     if actualRadius > limit:
@@ -168,10 +173,12 @@ for image_path in sorted(glob.glob(fileNames)):
                         incX = (x/increment)*step
                         incY = yOffset - ((y/increment)*step)
                         
-                        if drawCentreHole:    
-                            msp.add_circle((incX*step, incY*step), coRadius, dxfattribs={'layer': 'circles', 'color': 3, 'lineweight':0.1})
-                       
-                        msp.add_circle((incX, incY), actualRadius, dxfattribs={'layer': 'circles', 'color': 7,'lineweight':0.1})
+                        if drawCentreHole:
+                            colorCo = 7
+                            msp.add_circle((incX*step, incY*step), coRadius, dxfattribs={'layer': 'circles', 'color': colorCo, 'lineweight':0.1})
+                        
+                        colorGrey = 3
+                        msp.add_circle((incX, incY), actualRadius, dxfattribs={'layer': 'circles', 'color': colorGrey,'lineweight':0.1})
                         
         # create verical cuts for curtain effect        
         if config['curtainEnabled']:
@@ -187,20 +194,21 @@ for image_path in sorted(glob.glob(fileNames)):
         msp.add_circle((incX+offS, 0-(step+offS)/2 ), float(config['centreHoleRadius']) * scaleFactor, dxfattribs={'layer': 'circles', 'color': 8, 'lineweight':0.1})
     
     if config['boundaryCut'] or config['curtainEnabled']:    
+
         # Define containment box for curtains...
         A = (-step,     maxY+step)
         B = (incX+step, maxY+step)
         C = (incX+step, -step)
         D = (-step,     -step)
         
-        layer='circles'
-        color=6
-        weight=0.1
+        colorRed = 6 # red
+        layer    = 'circles'
+        weight   = 0.1
         
-        msp.add_line(A, B, dxfattribs={'layer': layer, 'color': color, 'lineweight':weight})
-        msp.add_line(B, C, dxfattribs={'layer': layer, 'color': color, 'lineweight':weight})
-        msp.add_line(C, D, dxfattribs={'layer': layer, 'color': color, 'lineweight':weight})
-        msp.add_line(D, A, dxfattribs={'layer': layer, 'color': color, 'lineweight':weight})
+        msp.add_line(A, B, dxfattribs={'layer': layer, 'color': colorRed, 'lineweight':weight})
+        msp.add_line(B, C, dxfattribs={'layer': layer, 'color': colorRed, 'lineweight':weight})
+        msp.add_line(C, D, dxfattribs={'layer': layer, 'color': colorRed, 'lineweight':weight})
+        msp.add_line(D, A, dxfattribs={'layer': layer, 'color': colorRed, 'lineweight':weight})
 
     
     # Now save the png's dxf file
@@ -210,4 +218,3 @@ for image_path in sorted(glob.glob(fileNames)):
     # Display spread of average pixel colour            
     # spDf= pd.DataFrame(spread)
     # spDf.hist(bins=255)
-    
