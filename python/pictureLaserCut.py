@@ -26,10 +26,10 @@ config = {
     'curtainEnabled'    : True,
     
     # final width of image in cm
-    'widthCm' : 20,
+    'widthCm' : 30,
     
     # Number  of circles in horizontal direction
-    'numXCircles' : 40,
+    'numXCircles' : 25,
     
     # Flag to denote if boundary to be defined
     'boundaryCut' : True,
@@ -182,7 +182,7 @@ for image_path in sorted(glob.glob(fileNames)):
                         
         # create verical cuts for curtain effect        
         if config['curtainEnabled']:
-             msp.add_line((incX, -step), (incX, maxY+step ), dxfattribs={'layer': 'circles', 'color': 5, 'lineweight':0.1})
+             msp.add_line((incX, 0), (incX, maxY ), dxfattribs={'layer': 'circles', 'color': 5, 'lineweight':0.1})
              msp.add_circle((incX-offS, maxY+(step+offS)/2 ), float(config['centreHoleRadius']) * scaleFactor, dxfattribs={'layer': 'circles', 'color': 8, 'lineweight':0.1})
              msp.add_circle((incX-offS, 0-(step+offS)/2 ), float(config['centreHoleRadius']) * scaleFactor, dxfattribs={'layer': 'circles', 'color': 8, 'lineweight':0.1})
                               
@@ -212,9 +212,12 @@ for image_path in sorted(glob.glob(fileNames)):
 
     
     # Now save the png's dxf file
-    doc.saveas('{:s}.dxf'.format(image_path.split('.')[:-1][0]))
+    doc.saveas('{:s}_{:03d}cm_{:03d}cuts_curtain_{:s}.dxf'.format(image_path.split('.')[:-1][0], int(widthCm), numXCircles, str(config['curtainEnabled'])))
     print('Radius data:\n-----------\n    Min: {:d}\n    Max: {:d}'.format(rMin,rMax))
+
+    
 
     # Display spread of average pixel colour            
     # spDf= pd.DataFrame(spread)
     # spDf.hist(bins=255)
+    
