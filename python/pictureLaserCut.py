@@ -8,6 +8,7 @@ Created on Sat Dec 28 13:40:07 2019
 from   skimage import io
 import glob
 import pandas as pd
+import numpy as np
 import math
 
 # import the dxf module
@@ -22,17 +23,26 @@ config = {
     'centreHoleRadius'      : 0.05,  # Radius in mm
     'centreHoleRadiusLimit' : 0.05,  # Limit of main circle to centre hole...
 
+    # Supported shapes 
+    'triangle' : False,
+    'circle'   : False,
+    'square'   : True,
+
     # Config for curtaining the circles
-    'curtainEnabled'    : True,
+    'curtainEnabled'    : False,
     
     # final width of image in cm
-    'widthCm' : 30,
+    'widthCm' :20,
     
     # Number  of circles in horizontal direction
-    'numXCircles' : 25,
+    'numXCircles' : 40,
     
     # Flag to denote if boundary to be defined
     'boundaryCut' : True,
+
+    # Max radius    
+    'maxLineSize' : 255
+
     }
 
 def getAverage(matrix, x, y, sz=16):
@@ -59,11 +69,28 @@ def getAverage(matrix, x, y, sz=16):
     
     return res
 
+def drawSquare(centreX, centreY, edgeLen):
+    # Define containment box for curtains...
+    offSet=edgeLen/2
+    A = (centreX-offSet, centreY-offSet)
+    B = (centreX-offSet, centreY+offSet)
+    C = (centreX+offSet, centreY+offSet)
+    D = (centreX+offSet, centreY-offSet)
+    
+    colorRed = 6 # red
+    layer    = 'circles'
+    weight   = 0.1
+    
+    msp.add_line(A, B, dxfattribs={'layer': layer, 'color': colorRed, 'lineweight':weight})
+    msp.add_line(B, C, dxfattribs={'layer': layer, 'color': colorRed, 'lineweight':weight})
+    msp.add_line(C, D, dxfattribs={'layer': layer, 'color': colorRed, 'lineweight':weight})
+    msp.add_line(D, A, dxfattribs={'layer': layer, 'color': colorRed, 'lineweight':weight})
+    
 def calcRadius(actR, maxR):
     
     return actR
 
-maxRadius=255
+maxRadius=config['maxLineSize']
 
 step = 5  # in mm
 scaleFactor = 0.95 # coord scaling
@@ -78,20 +105,6 @@ for image_path in sorted(glob.glob(fileNames)):
     image = io.imread(image_path, as_gray=True)
     #image=misc.face(gray=True)
     image=maxRadius-(image*maxRadius)    
-    
-    '''
-    threshVal = filters.threshold_otsu(image)
-    ni = image.copy()
-    np.putmask(ni, ni<threshVal, 0)
-    
-    plt.figure(figsize=(7, 3))
-    
-    plt.subplot(121)
-    plt.imshow(ni, cmap='gray', interpolation='nearest')
-    '''
-
-    #d=image[0]
-    # Y = 0.2125 R + 0.7154 G + 0.0721 B
     
     print(image.shape)
     print(image.dtype)
@@ -112,8 +125,6 @@ for image_path in sorted(glob.glob(fileNames)):
     minIncrement=16
     numXCircles=config['numXCircles']
     increment=int(image.shape[1]/numXCircles)
-#    if increment < minIncrement:
-#        increment = minIncrement
     
     step = (widthCm*10)/numXCircles
     offS = step/2    
@@ -140,7 +151,7 @@ for image_path in sorted(glob.glob(fileNames)):
 
                     radius = getAverage(image,x,y,increment)
 
-                    # rercord the radious data
+                    # record the radious data
                     spread.append(radius)
 
                     if rMin > radius:
@@ -164,7 +175,7 @@ for image_path in sorted(glob.glob(fileNames)):
                     actRadiusArea = (maxRadiusArea * radius) / maxRadius 
                     actRadius     = math.sqrt(actRadiusArea)
                     actualRadius = ((step-1)*actRadius)/(2*maxRadius) # in mm
-                    #actualRadius = ((step-1)*radius)/(2*maxRadius) # in mm
+
                     actualRadius *= scaleFactor 
 
                     if actualRadius > limit:
@@ -175,10 +186,17 @@ for image_path in sorted(glob.glob(fileNames)):
                         
                         if drawCentreHole:
                             colorCo = 7
-                            msp.add_circle((incX*step, incY*step), coRadius, dxfattribs={'layer': 'circles', 'color': colorCo, 'lineweight':0.1})
-                        
+                            msp.add_circle((incX*step, incY*step), coRadius, dxfattribs={'layer': 'circles', 'color': colorCo, 'lineweight':0.1})           
+    
                         colorGrey = 3
-                        msp.add_circle((incX, incY), actualRadius, dxfattribs={'layer': 'circles', 'color': colorGrey,'lineweight':0.1})
+                        if config['circle']:             
+                            msp.add_poly((incX, incY), actualRadius, dxfattribs={'layer': 'circles', 'color': colorGrey,'lineweight':0.1})
+
+                        elif config['square']:             
+                            drawSquare(incX, incY, actualRadius*2)
+
+                        elif config['triangle']:             
+                            msp.add_circle((incX, incY), actualRadius, dxfattribs={'layer': 'circles', 'color': colorGrey,'lineweight':0.1})
                         
         # create verical cuts for curtain effect        
         if config['curtainEnabled']:
