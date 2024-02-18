@@ -6,7 +6,7 @@ Created on Sat Dec 28 13:40:07 2019
 """
 
 from   skimage import io
-import glob
+import glob2 as glob
 import pandas as pd
 
 # import the dxf module
