@@ -20,7 +20,8 @@ This file will parse all **.png** files in the **current working directory** and
 The resulting .dxf file contains an image, not unlike the old newspaper black and whites pictures that have large dots for dark areas and small dots for light areas
 
 __Pre-requisites:__
- * import skimage
- * import glob
- * import pandas
- * import ezdxf
+Use pip install to load the following libraries:
+ * scikit-image
+ * glob2
+ * pandas
+ * ezdxf
