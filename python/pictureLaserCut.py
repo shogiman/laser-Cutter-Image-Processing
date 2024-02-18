@@ -5,8 +5,8 @@ Created on Sat Dec 28 13:40:07 2019
 @author: Nicholas
 """
 
-from   skimage import io
-import glob
+from skimage import io
+import glob2 as glob
 import pandas as pd
 import numpy as np
 import math
@@ -25,18 +25,18 @@ config = {
 
     # Supported shapes 
     'triangle' : False,
-    'circle'   : False,
-    'square'   : True,
+    'circle'   : True,
+    'square'   : False,
 
     # Config for curtaining the circles
     'curtainEnabled'    : False,
-    
+
     # final width of image in cm
     'widthCm' :20,
-    
+
     # Number  of circles in horizontal direction
     'numXCircles' : 40,
-    
+
     # Flag to denote if boundary to be defined
     'boundaryCut' : True,
 
@@ -57,7 +57,6 @@ def getAverage(matrix, x, y, sz=16):
     szy=sz
     if (y + szy) >= matrix.shape[0]:
         szy = matrix.shape[0] - y
-
     for xVal in range(x,x+sz):
         for yVal in range(y,y+sz):
             val += matrix[yVal,xVal]
@@ -190,7 +189,7 @@ for image_path in sorted(glob.glob(fileNames)):
     
                         colorGrey = 3
                         if config['circle']:             
-                            msp.add_poly((incX, incY), actualRadius, dxfattribs={'layer': 'circles', 'color': colorGrey,'lineweight':0.1})
+                            msp.add_circle((incX, incY), actualRadius, dxfattribs={'layer': 'circles', 'color': colorGrey,'lineweight':0.1})
 
                         elif config['square']:             
                             drawSquare(incX, incY, actualRadius*2)
